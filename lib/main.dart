@@ -5,7 +5,15 @@ import 'screens/main_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/study_plan_screen.dart';
 import 'constants/app_theme.dart';
+import 'screens/profile_edit_screen.dart';
+import 'screens/friends_screen.dart';
+import 'screens/add_friend_screen.dart';
+import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'utils/auth_utils.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,15 +42,21 @@ class MyApp extends StatelessWidget {
     );
     
     return MaterialApp(
-      title: 'WordDuel',
+      title: 'Word Duel',
       debugShowCheckedModeBanner: false,
       theme: customTheme,
-      initialRoute: '/',
+      home: const SplashScreen(),
       routes: {
-        '/': (context) => const MainScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/study-plan': (context) => const StudyPlanScreen(),
+        '/profile-edit': (context) => const ProfileEditScreen(),
+        '/friends': (context) => const FriendsScreen(),
+        '/add-friend': (context) => const AddFriendScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/main': (context) => const MainScreen(),
       },
     );
   }

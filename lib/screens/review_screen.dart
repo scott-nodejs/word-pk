@@ -21,6 +21,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   /// 当前单词索引
   int _currentIndex = 0;
   
+  /// 是否显示释义
+  bool _showDefinition = true;
+  
   /// 是否已收藏当前单词
   bool _isFavorite = false;
   
@@ -32,6 +35,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
     super.initState();
     _words = MockData.getWords();
     _totalWords = _words.length;
+  }
+
+  /// 切换显示/隐藏释义
+  void _toggleDefinition() {
+    setState(() {
+      _showDefinition = !_showDefinition;
+    });
   }
 
   /// 切换收藏状态
@@ -87,10 +97,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
             // 进度条
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: ProgressBar(
-                progress: progress,
-                height: 8,
-                borderRadius: 4,
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: const Color(0xFFE5E7EB),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
             
@@ -104,10 +116,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       // 单词卡片
                       WordCard(
                         word: currentWord,
-                        showDefinition: true, // 复习模式下始终显示释义
+                        showDefinition: _showDefinition,
                         isFavorite: _isFavorite,
                         onFavoriteToggle: _toggleFavorite,
                         onPronounce: _pronounceWord,
+                        onToggleDefinition: _toggleDefinition,
                         libraryName: '大学英语四级',
                       ),
                       

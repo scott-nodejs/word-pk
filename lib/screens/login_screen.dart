@@ -70,26 +70,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 12),
                     
-                    // 标题
-                    const Text(
-                      '欢迎登录',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
+                    // Logo图标
+                    Center(
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4F46E5), // indigo-600
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.menu_book,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '请选择登录方式继续使用',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     
                     // 登录表单
                     Container(
@@ -381,50 +380,45 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // 底部协议提示
-            Positioned(
-              bottom: 24,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text.rich(
-                  TextSpan(
-                    text: '登录即表示您同意我们的 ',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
+                    
+                    // 底部协议提示
+                    Padding(
+                      padding: const EdgeInsets.only(top: 32, bottom: 24),
+                      child: Text.rich(
+                        TextSpan(
+                          text: '登录即表示您同意我们的 ',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '服务条款',
+                              style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  // 打开服务条款
+                                },
+                            ),
+                            const TextSpan(text: ' 和 '),
+                            TextSpan(
+                              text: '隐私政策',
+                              style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  // 打开隐私政策
+                                },
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    children: [
-                      TextSpan(
-                        text: '服务条款',
-                        style: const TextStyle(
-                          color: AppTheme.primaryColor,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // 打开服务条款
-                          },
-                      ),
-                      const TextSpan(text: ' 和 '),
-                      TextSpan(
-                        text: '隐私政策',
-                        style: const TextStyle(
-                          color: AppTheme.primaryColor,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // 打开隐私政策
-                          },
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
+                  ],
                 ),
               ),
             ),

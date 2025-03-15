@@ -87,7 +87,7 @@ class BottomNavBar extends StatelessWidget {
           Positioned(
             left: 0,
             right: 0,
-            top: 5, // 调整按钮位置
+            top: -8, // 调整按钮位置，使其更向上突出
             child: Center(
               child: _buildFloatingActionButton(),
             ),
@@ -107,16 +107,23 @@ class BottomNavBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isActive 
-                ? AppTheme.primaryColor.withOpacity(0.9)
-                : AppTheme.primaryColor,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF6366F1),
+                  isActive 
+                    ? const Color(0xFF4F46E5).withOpacity(0.9)
+                    : const Color(0xFF4F46E5),
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: const Color(0xFF6366F1).withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -124,17 +131,17 @@ class BottomNavBar extends StatelessWidget {
             ),
             child: const Center(
               child: Icon(
-                Icons.school,
+                Icons.sports_esports,
                 color: Colors.white,
-                size: 28,
+                size: 30,
               ),
             ),
           ),
           const SizedBox(height: 2), // 减少间距
           Text(
-            '学习',
+            '对战',
             style: TextStyle(
-              color: isActive ? AppTheme.primaryColor : AppTheme.textSecondaryColor,
+              color: isActive ? const Color(0xFF6366F1) : AppTheme.textSecondaryColor,
               fontSize: 10, // 调小字体
               fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
             ),

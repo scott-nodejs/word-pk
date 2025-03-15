@@ -6,6 +6,7 @@ import 'library_screen.dart';
 import 'learning_screen.dart';
 import 'community_screen.dart';
 import 'profile_screen.dart';
+import 'duel_matching_screen.dart';
 
 /// 主屏幕（包含底部导航栏和各个标签页）
 class MainScreen extends StatefulWidget {
@@ -45,16 +46,16 @@ class _MainScreenState extends State<MainScreen> {
       }
     });
     
-    // 学习标签特殊处理：不使用PageView切换
+    // 对战标签特殊处理：不使用PageView切换
     if (index == AppConstants.learningTabIndex) {
-      // 直接打开学习页面而不是切换PageView
+      // 直接打开对战匹配页面而不是切换PageView
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const LearningScreen(),
+          builder: (context) => const DuelMatchingScreen(),
         ),
       ).then((_) {
-        // 学习页面关闭后，恢复之前的标签
+        // 对战页面关闭后，恢复之前的标签
         setState(() {
           _currentIndex = _pageController.page!.round();
         });

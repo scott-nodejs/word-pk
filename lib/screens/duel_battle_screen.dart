@@ -31,7 +31,7 @@ class DuelBattleScreen extends StatefulWidget {
   State<DuelBattleScreen> createState() => _DuelBattleScreenState();
 }
 
-class _DuelBattleScreenState extends State<DuelBattleScreen> {
+class _DuelBattleScreenState extends State<DuelBattleScreen> with SingleTickerProviderStateMixin {
   /// 当前用户
   late final _currentUser = MockData.getCurrentUser();
   
@@ -53,6 +53,10 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
   /// 对手得分
   int _opponentScore = 0;
   
+  /// 进度条动画控制器
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+  
   /// 剩余时间（秒）
   late int _remainingTime;
   
@@ -64,6 +68,15 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
   
   /// 对手思考计时器
   Timer? _opponentThinkingTimer;
+  
+  /// 用户选择的答案索引
+  int? _userSelectedIndex;
+  
+  /// 对手选择的答案索引
+  int? _opponentSelectedIndex;
+  
+  /// 当前问题的正确答案索引
+  int? _correctAnswerIndex;
 
   @override
   void initState() {
@@ -73,6 +86,19 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
         ? _questions.length 
         : widget.wordCount;
     _remainingTime = widget.timeLimit;
+    
+    // 初始化进度条动画控制器
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _progressAnimation = Tween<double>(begin: 0, end: 0).animate(
+      CurvedAnimation(
+        parent: _progressController,
+        curve: Curves.easeOut,
+      ),
+    );
+    
     _startTimer();
     _simulateOpponentThinking();
   }
@@ -81,6 +107,7 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
   void dispose() {
     _timer?.cancel();
     _opponentThinkingTimer?.cancel();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -106,8 +133,16 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
       if (mounted) {
         setState(() {
           _isOpponentThinking = false;
-          // 随机决定对手是否答对
-          final isCorrect = (DateTime.now().millisecondsSinceEpoch % 2) == 0;
+          
+          // 获取当前问题
+          final currentQuestion = _questions[_currentIndex];
+          _correctAnswerIndex = currentQuestion.correctOptionIndex;
+          
+          // 随机选择一个选项作为对手的答案
+          _opponentSelectedIndex = DateTime.now().millisecondsSinceEpoch % currentQuestion.options.length;
+          
+          // 判断对手是否答对
+          final isCorrect = _opponentSelectedIndex == _correctAnswerIndex;
           if (isCorrect) {
             _opponentScore++;
           }
@@ -118,31 +153,70 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
 
   /// 处理答案选择
   void _handleAnswer(int selectedIndex) {
-    // 检查是否超出题目范围
-    if (_currentIndex >= _actualWordCount) {
+    // 检查是否超出题目范围或已经选择过答案
+    if (_currentIndex >= _actualWordCount || _userSelectedIndex != null) {
       return;
     }
     
     final currentQuestion = _questions[_currentIndex];
-    final isCorrect = selectedIndex == currentQuestion.correctOptionIndex;
+    _correctAnswerIndex = currentQuestion.correctOptionIndex;
+    final isCorrect = selectedIndex == _correctAnswerIndex;
     
-    if (isCorrect) {
-      setState(() {
+    setState(() {
+      _userSelectedIndex = selectedIndex;
+      
+      if (isCorrect) {
+        // 设置动画的起始值和结束值
+        _progressAnimation = Tween<double>(
+          begin: _userScore / widget.wordCount,
+          end: (_userScore + 1) / widget.wordCount,
+        ).animate(
+          CurvedAnimation(
+            parent: _progressController,
+            curve: Curves.easeOut,
+          ),
+        );
+        
         _userScore++;
-      });
-    }
+        
+        // 启动动画
+        _progressController.forward(from: 0);
+      }
+    });
     
     // 取消当前计时器
     _timer?.cancel();
     _opponentThinkingTimer?.cancel();
     
+    // 如果对手尚未做出选择，强制对手立即做出选择
+    if (_opponentSelectedIndex == null) {
+      final hasAnswer = !_isOpponentThinking;
+      if (!hasAnswer) {
+        setState(() {
+          _isOpponentThinking = false;
+          
+          // 随机选择一个选项作为对手的答案
+          _opponentSelectedIndex = DateTime.now().millisecondsSinceEpoch % currentQuestion.options.length;
+          
+          // 判断对手是否答对
+          final isOpponentCorrect = _opponentSelectedIndex == _correctAnswerIndex;
+          if (isOpponentCorrect) {
+            _opponentScore++;
+          }
+        });
+      }
+    }
+    
     // 延迟一段时间后进入下一题或结束
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (_currentIndex < _actualWordCount - 1) {
         setState(() {
           _currentIndex++;
           _remainingTime = widget.timeLimit;
           _isOpponentThinking = true;
+          _userSelectedIndex = null;
+          _opponentSelectedIndex = null;
+          _correctAnswerIndex = null;
         });
         _startTimer();
         _simulateOpponentThinking();
@@ -184,9 +258,6 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
           children: [
             // 顶部状态栏
             _buildTopBar(),
-            
-            // 倒计时
-            _buildCountdown(),
             
             // 单词卡片
             _buildWordCard(currentQuestion),
@@ -334,70 +405,89 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
           
           const SizedBox(height: 16),
           
-          // 得分进度条
-          Row(
+          // 得分进度条和倒计时
+          Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                '$_userScore',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
+              // 得分进度条
+              Row(
+                children: [
+                  Text(
+                    '$_userScore',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      height: 24,
+                      alignment: Alignment.center,
+                      child: AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, child) {
+                          return DualProgressBar(
+                            leftProgress: _progressAnimation.value,
+                            rightProgress: _opponentScore / widget.wordCount,
+                            height: 6,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            leftColor: Colors.white.withOpacity(0.9),
+                            rightColor: Colors.white.withOpacity(0.9),
+                            borderRadius: 3,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$_opponentScore',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DualProgressBar(
-                  leftProgress: _userScore / widget.wordCount,
-                  rightProgress: _opponentScore / widget.wordCount,
-                  height: 8,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  leftColor: Colors.white,
-                  rightColor: Colors.white,
-                  borderRadius: 4,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '$_opponentScore',
-                style: const TextStyle(
+              
+              // 倒计时
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    '$_remainingTime',
+                    style: TextStyle(
+                      color: _remainingTime <= 5
+                          ? Colors.red
+                          : AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  /// 构建倒计时
-  Widget _buildCountdown() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Center(
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              '$_remainingTime',
-              style: TextStyle(
-                color: _remainingTime <= 5
-                    ? Colors.red
-                    : AppTheme.primaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -495,14 +585,36 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
             final option = question.options[index];
             final optionLabel = String.fromCharCode(65 + index); // A, B, C, D...
             
+            // 确定选项颜色
+            Color containerColor = Colors.white;
+            Color borderColor = const Color(0xFFE5E7EB);
+            
+            // 如果用户或对手已选择并且我们知道正确答案
+            if (_correctAnswerIndex != null) {
+              // 如果是正确答案
+              if (index == _correctAnswerIndex) {
+                containerColor = const Color(0xFFECFDF5); // 浅绿色背景
+                borderColor = const Color(0xFF10B981); // 绿色边框
+              }
+              // 如果是用户或对手选择的错误答案
+              else if (index == _userSelectedIndex || index == _opponentSelectedIndex) {
+                containerColor = const Color(0xFFFEF2F2); // 浅红色背景
+                borderColor = const Color(0xFFEF4444); // 红色边框
+              }
+            }
+            
+            // 检查用户和对手是否选择了这个选项
+            final isUserSelected = index == _userSelectedIndex;
+            final isOpponentSelected = index == _opponentSelectedIndex && !_isOpponentThinking;
+            
             return GestureDetector(
               onTap: () => _handleAnswer(index),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: containerColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -513,6 +625,19 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
                 ),
                 child: Row(
                   children: [
+                    // 用户选择指示器
+                    if (isUserSelected)
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: index == _correctAnswerIndex 
+                              ? const Color(0xFF10B981) // 绿色
+                              : const Color(0xFFEF4444), // 红色
+                        ),
+                      ),
+                    
                     // 选项标签
                     Container(
                       width: 32,
@@ -545,6 +670,19 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> {
                         ),
                       ),
                     ),
+                    
+                    // 对手选择指示器
+                    if (isOpponentSelected)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        child: Icon(
+                          Icons.arrow_back_ios,
+                          size: 16,
+                          color: index == _correctAnswerIndex 
+                              ? const Color(0xFF10B981) // 绿色
+                              : const Color(0xFFEF4444), // 红色
+                        ),
+                      ),
                   ],
                 ),
               ),

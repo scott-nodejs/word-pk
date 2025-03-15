@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/mock_data.dart';
 import '../constants/app_theme.dart';
 import '../utils/auth_utils.dart';
+import 'study_statistics_screen.dart';
 
 /// 个人中心页面
 class ProfileScreen extends StatelessWidget {
@@ -16,46 +17,57 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              // 顶部个人信息背景，不再使用Stack
-              GestureDetector(
-                onTap: () async {
-                  await AuthUtils.checkLoginState(context);
-                },
-                child: _buildProfileHeader(user),
+              // 内容列
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 顶部个人信息背景
+                  GestureDetector(
+                    onTap: () async {
+                      await AuthUtils.checkLoginState(context);
+                    },
+                    child: _buildProfileHeader(context, user),
+                  ),
+                  
+                  // 为重叠的统计卡片提供空间
+                  const SizedBox(height: 60),
+                  
+                  // 成就部分
+                  GestureDetector(
+                    onTap: () async {
+                      await AuthUtils.checkLoginState(context);
+                    },
+                    child: _buildAchievementsSection(),
+                  ),
+                  
+                  // 设置菜单
+                  GestureDetector(
+                    onTap: () async {
+                      await AuthUtils.checkLoginState(context);
+                    },
+                    child: _buildSettingsMenu(context),
+                  ),
+                  
+                  // 底部间距，防止内容被底部导航栏遮挡
+                  const SizedBox(height: 80),
+                ],
               ),
               
-              // 统计卡片，独立放置而不是重叠
-              GestureDetector(
-                onTap: () async {
-                  await AuthUtils.checkLoginState(context);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 40, 16, 0),
+              // 统计卡片（定位在个人信息背景下方，部分重叠）
+              Positioned(
+                top: 200, // 调整此值以获得合适的重叠效果
+                left: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () async {
+                    await AuthUtils.checkLoginState(context);
+                  },
                   child: _buildStatisticsCard(),
                 ),
               ),
-              
-              // 成就部分
-              GestureDetector(
-                onTap: () async {
-                  await AuthUtils.checkLoginState(context);
-                },
-                child: _buildAchievementsSection(),
-              ),
-              
-              // 设置菜单
-              GestureDetector(
-                onTap: () async {
-                  await AuthUtils.checkLoginState(context);
-                },
-                child: _buildSettingsMenu(),
-              ),
-              
-              // 底部间距，防止内容被底部导航栏遮挡
-              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -64,10 +76,9 @@ class ProfileScreen extends StatelessWidget {
   }
   
   /// 构建顶部个人信息区域
-  Widget _buildProfileHeader(dynamic user) {
+  Widget _buildProfileHeader(BuildContext context, dynamic user) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24), // 减少底部内边距，因为不需要重叠了
-      margin: const EdgeInsets.only(bottom: 0), // 减少与下方卡片的间距
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 40), // 增加底部内边距，为统计卡片腾出空间
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -86,67 +97,101 @@ class ProfileScreen extends StatelessWidget {
         children: [
           // 用户基本信息和设置按钮
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // 头像
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    user.initials,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              // 用户名和等级
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: const [
-                        Icon(
-                          Icons.star,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Lv.8',
-                          style: TextStyle(
+              Row(
+                children: [
+                  // 头像 (可点击)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/profile-edit');
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
                             color: Colors.white,
-                            fontSize: 14,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              user.initials,
+                              style: TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 编辑指示器
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 10,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 16),
+                  // 用户名和等级
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: const [
+                          Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Lv.8',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
               // 设置按钮
               Container(
@@ -160,7 +205,7 @@ class ProfileScreen extends StatelessWidget {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    // 打开设置页面
+                    Navigator.pushNamed(context, '/settings');
                   },
                 ),
               ),
@@ -171,9 +216,9 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildHeaderStatItem('已学单词', '128'),
-              _buildHeaderStatItem('学习天数', '45'),
-              _buildHeaderStatItem('对决胜场', '18'),
+              _buildHeaderStatItem(context, '已学单词', '128'),
+              _buildHeaderStatItem(context, '学习天数', '45'),
+              _buildHeaderStatItem(context, '对决胜场', '18'),
             ],
           ),
         ],
@@ -182,114 +227,122 @@ class ProfileScreen extends StatelessWidget {
   }
   
   /// 构建顶部简单统计项
-  Widget _buildHeaderStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildHeaderStatItem(BuildContext context, String label, String value) {
+    return GestureDetector(
+      onTap: () {
+        if (label == '学习天数') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const StudyStatisticsScreen(),
+            ),
+          );
+        }
+      },
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
   
   /// 构建学习统计卡片
   Widget _buildStatisticsCard() {
-    return Transform.translate(
-      offset: const Offset(0, -35), // 向上偏移35像素，稍微再多压一点
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '学习数据',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
-                  ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '学习数据',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryColor,
                 ),
-                TextButton(
-                  onPressed: () {
-                    // 查看详细数据
-                  },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 0),
-                  ),
-                  child: Row(
-                    children: const [
-                      Text(
-                        '查看详情',
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 12,
+              ),
+              TextButton(
+                onPressed: () {
+                  // 查看详细数据
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                ),
+                child: Row(
+                  children: const [
+                    Text(
+                      '查看详情',
+                      style: TextStyle(
                         color: AppTheme.primaryColor,
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  icon: Icons.calendar_today,
-                  value: '28',
-                  label: '今日单词',
-                ),
-                _buildStatItem(
-                  icon: Icons.local_fire_department,
-                  value: '12',
-                  label: '连续打卡',
-                  valueColor: const Color(0xFFFF6B6B),
-                ),
-                _buildStatItem(
-                  icon: Icons.auto_awesome,
-                  value: '1,286',
-                  label: '总计词量',
-                  valueColor: const Color(0xFF4C6EF5),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                icon: Icons.calendar_today,
+                value: '28',
+                label: '今日单词',
+              ),
+              _buildStatItem(
+                icon: Icons.local_fire_department,
+                value: '12',
+                label: '连续打卡',
+                valueColor: const Color(0xFFFF6B6B),
+              ),
+              _buildStatItem(
+                icon: Icons.auto_awesome,
+                value: '1,286',
+                label: '总计词量',
+                valueColor: const Color(0xFF4C6EF5),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -439,7 +492,7 @@ class ProfileScreen extends StatelessWidget {
   }
   
   /// 构建设置菜单
-  Widget _buildSettingsMenu() {
+  Widget _buildSettingsMenu(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -454,11 +507,28 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _buildSettingItem(
-            icon: Icons.settings,
-            iconColor: AppTheme.primaryColor,
-            title: '学习设置',
-            subtitle: '学习计划、提醒时间',
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/study-plan');
+            },
+            child: _buildSettingItem(
+              icon: Icons.settings,
+              iconColor: AppTheme.primaryColor,
+              title: '学习设置',
+              subtitle: '学习计划、提醒时间',
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/friends');
+            },
+            child: _buildSettingItem(
+              icon: Icons.people,
+              iconColor: Colors.green,
+              title: '我的好友',
+              subtitle: '查看好友、添加好友、PK邀请',
+            ),
           ),
           const SizedBox(height: 12),
           _buildSettingItem(
