@@ -2,6 +2,7 @@ import '../models/word.dart';
 import '../models/word_library.dart';
 import '../models/user.dart';
 import '../models/duel.dart';
+import '../models/wrong_answer.dart';
 
 /// 模拟数据生成工具类
 class MockData {
@@ -12,52 +13,7 @@ class MockData {
       name: 'John Doe',
       initials: 'JD',
       level: 8,
-      experience: 3500,
-      learnedWords: 128,
-      learningDays: 45,
-      duelWins: 18,
-      achievements: [
-        Achievement(
-          id: 'achievement1',
-          name: '单词达人',
-          description: '学习超过100个单词',
-          iconName: 'coin',
-          backgroundColor: '#FEF3C7',
-          iconColor: '#F59E0B',
-          isUnlocked: true,
-          unlockedAt: DateTime.now().subtract(const Duration(days: 5)),
-        ),
-        Achievement(
-          id: 'achievement2',
-          name: '速记王',
-          description: '连续答对20个单词',
-          iconName: 'lightning',
-          backgroundColor: '#E0E7FF',
-          iconColor: '#6366F1',
-          isUnlocked: true,
-          unlockedAt: DateTime.now().subtract(const Duration(days: 3)),
-        ),
-        Achievement(
-          id: 'achievement3',
-          name: '坚持不懈',
-          description: '连续学习10天',
-          iconName: 'badge',
-          backgroundColor: '#D1FAE5',
-          iconColor: '#10B981',
-          isUnlocked: true,
-          unlockedAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        Achievement(
-          id: 'achievement4',
-          name: '对战高手',
-          description: '赢得10场对战',
-          iconName: 'lock',
-          backgroundColor: '#F3F4F6',
-          iconColor: '#9CA3AF',
-          isUnlocked: false,
-        ),
-      ],
-      addedLibraryIds: ['library1', 'library2'],
+      score: 3500,
     );
   }
 
@@ -212,12 +168,14 @@ class MockData {
       name: 'Sarah',
       initials: 'SK',
       level: 7,
+      score: 1865,
     );
     final opponent2 = User(
       id: 'user3',
       name: 'Mike',
       initials: 'MK',
       level: 9,
+      score: 1720,
     );
     final wordLibrary = getWordLibraries()[0];
 
@@ -296,6 +254,120 @@ class MockData {
         ],
         correctOptionIndex: 2,
       ),
+    ];
+  }
+
+  /// 获取错题列表
+  static List<WrongAnswer> getWrongAnswers() {
+    return [
+      WrongAnswer(
+        word: 'accomplish',
+        pronunciation: '/əˈkʌmplɪʃ/',
+        userAnswer: '实现；完成',
+        correctAnswer: '完成；达到',
+        addedDate: DateTime.now(),
+      ),
+      WrongAnswer(
+        word: 'determine',
+        pronunciation: '/dɪˈtɜːmɪn/',
+        userAnswer: '决心；意志',
+        correctAnswer: '决定；确定',
+        addedDate: DateTime.now(),
+      ),
+      WrongAnswer(
+        word: 'elaborate',
+        pronunciation: '/ɪˈlæbərət/',
+        userAnswer: '阐述；说明',
+        correctAnswer: '精心制作的；详尽的',
+        addedDate: DateTime.now().subtract(const Duration(days: 1)),
+        isReviewed: true,
+      ),
+      WrongAnswer(
+        word: 'facilitate',
+        pronunciation: '/fəˈsɪlɪteɪt/',
+        userAnswer: '方便；简化',
+        correctAnswer: '促进；使容易',
+        addedDate: DateTime.now().subtract(const Duration(days: 3)),
+        isReviewed: true,
+      ),
+      WrongAnswer(
+        word: 'controversial',
+        pronunciation: '/ˌkɒntrəˈvɜːʃl/',
+        userAnswer: '竞争的；争议的',
+        correctAnswer: '有争议的；引起争论的',
+        addedDate: DateTime.now().subtract(const Duration(days: 5)),
+      ),
+      WrongAnswer(
+        word: 'advocate',
+        pronunciation: '/ˈædvəkeɪt/',
+        userAnswer: '建议；劝告',
+        correctAnswer: '提倡；拥护',
+        addedDate: DateTime.now().subtract(const Duration(days: 5)),
+      ),
+      WrongAnswer(
+        word: 'allocate',
+        pronunciation: '/ˈæləkeɪt/',
+        userAnswer: '分类；归类',
+        correctAnswer: '分配；分派',
+        addedDate: DateTime.now().subtract(const Duration(days: 7)),
+        isReviewed: true,
+      ),
+    ];
+  }
+
+  /// 获取单词挑战的单词列表
+  static List<Word> getWordsForChallenge(int count) {
+    // 使用现有的单词数据，也可以创建专门的挑战词汇
+    final allWords = getWords();
+    allWords.shuffle(); // 随机打乱顺序
+    return allWords.take(count).toList();
+  }
+  
+  /// 获取单个随机错误选项
+  static String getRandomWrongMeaning() {
+    final wrongMeanings = _getWrongMeaningList();
+    wrongMeanings.shuffle();
+    return wrongMeanings.first;
+  }
+  
+  /// 获取多个随机错误选项
+  static List<String> getRandomWrongMeanings(int count) {
+    final allWrongMeanings = _getWrongMeaningList();
+    allWrongMeanings.shuffle();
+    
+    // 确保不超过可用的错误选项数量
+    final actualCount = count > allWrongMeanings.length ? allWrongMeanings.length : count;
+    return allWrongMeanings.sublist(0, actualCount);
+  }
+  
+  /// 获取错误选项列表
+  static List<String> _getWrongMeaningList() {
+    return [
+      '处理；解决',
+      '认为；相信',
+      '想象；假设',
+      '改变；修改',
+      '分析；研究',
+      '寻找；搜索',
+      '应用；使用',
+      '保持；维持',
+      '接受；承认',
+      '检查；查看',
+      '拒绝；抵制',
+      '完成；实现',
+      '探索；发现',
+      '关注；集中',
+      '转变；变化',
+      '增强；提高',
+      '减少；降低',
+      '支持；赞同',
+      '反对；否定',
+      '创造；建立',
+      '破坏；摧毁',
+      '参与；加入',
+      '退出；离开',
+      '开始；启动',
+      '结束；完成',
     ];
   }
 } 

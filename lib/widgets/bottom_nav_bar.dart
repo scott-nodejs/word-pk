@@ -8,7 +8,7 @@ class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   
   /// 索引变化回调
-  final Function(int) onIndexChanged;
+  final Function(int) onTap;
   
   /// 社区通知数量
   final int communityNotificationCount;
@@ -17,7 +17,7 @@ class BottomNavBar extends StatelessWidget {
   const BottomNavBar({
     Key? key,
     required this.currentIndex,
-    required this.onIndexChanged,
+    required this.onTap,
     this.communityNotificationCount = AppConstants.defaultCommunityNotificationCount,
   }) : super(key: key);
 
@@ -28,68 +28,100 @@ class BottomNavBar extends StatelessWidget {
         color: Colors.white,
         border: const Border(
           top: BorderSide(
-            color: Color(0xFFE5E7EB),
+            color: Color(0xFFF3F4F6), // 更浅的灰色边框
             width: 1,
           ),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            blurRadius: 8,
             offset: const Offset(0, -2),
           ),
         ],
       ),
-      height: 80, // 增加高度以适应浮动按钮
+      height: 70, // 调整高度
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
         children: [
-          // 主导航栏
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                    icon: Icons.home_outlined,
-                    activeIcon: Icons.home,
-                    label: '首页',
-                    index: AppConstants.homeTabIndex,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.book_outlined,
-                    activeIcon: Icons.book,
-                    label: '词库',
-                    index: AppConstants.libraryTabIndex,
-                  ),
-                  // 中间的占位
-                  const SizedBox(width: 50),
-                  _buildNavItem(
-                    icon: Icons.people_outline,
-                    activeIcon: Icons.people,
-                    label: '社区',
-                    index: AppConstants.communityTabIndex,
-                    showBadge: true,
-                    badgeCount: communityNotificationCount,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.person_outline,
-                    activeIcon: Icons.person,
-                    label: '我的',
-                    index: AppConstants.profileTabIndex,
-                  ),
-                ],
+          // 底部导航栏的基本按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // 首页按钮
+              _buildNavButton(
+                isActive: currentIndex == AppConstants.homeTabIndex,
+                icon: Icons.arrow_upward_rounded,
+                label: '首页',
+                onTap: () => onTap(AppConstants.homeTabIndex),
               ),
-            ),
+              
+              // 中间占位
+              const SizedBox(width: 48),
+              
+              // 我的按钮
+              _buildNavButton(
+                isActive: currentIndex == AppConstants.profileTabIndex,
+                icon: Icons.person_outline,
+                label: '我的',
+                onTap: () => onTap(AppConstants.profileTabIndex),
+              ),
+            ],
           ),
           
-          // 悬浮的"学习"按钮
+          // 对战按钮（中间凸起的按钮）
           Positioned(
-            left: 0,
-            right: 0,
-            top: -8, // 调整按钮位置，使其更向上突出
-            child: Center(
-              child: _buildFloatingActionButton(),
+            top: -20, // 向上凸起
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PulseAnimationEffect(
+                  child: GestureDetector(
+                    onTap: () => onTap(AppConstants.learningTabIndex),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF9333EA)], // indigo-500 to purple-600
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.bolt,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '对战',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: currentIndex == AppConstants.learningTabIndex
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFF9CA3AF), // gray-400
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -97,52 +129,33 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  /// 构建浮动学习按钮
-  Widget _buildFloatingActionButton() {
-    final isActive = currentIndex == AppConstants.learningTabIndex;
-    
+  /// 构建普通导航按钮
+  Widget _buildNavButton({
+    required bool isActive,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () => onIndexChanged(AppConstants.learningTabIndex),
+      onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF6366F1),
-                  isActive 
-                    ? const Color(0xFF4F46E5).withOpacity(0.9)
-                    : const Color(0xFF4F46E5),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.sports_esports,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
+          Icon(
+            icon,
+            size: 24,
+            color: isActive
+                ? const Color(0xFF6366F1) // indigo-600
+                : const Color(0xFF9CA3AF), // gray-400
           ),
-          const SizedBox(height: 2), // 减少间距
+          const SizedBox(height: 4),
           Text(
-            '对战',
+            label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF6366F1) : AppTheme.textSecondaryColor,
-              fontSize: 10, // 调小字体
+              fontSize: 12,
+              color: isActive
+                  ? const Color(0xFF6366F1) // indigo-600
+                  : const Color(0xFF9CA3AF), // gray-400
               fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
@@ -150,76 +163,59 @@ class BottomNavBar extends StatelessWidget {
       ),
     );
   }
+}
 
-  /// 构建导航项
-  Widget _buildNavItem({
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-    required int index,
-    bool showBadge = false,
-    int badgeCount = 0,
-  }) {
-    final isActive = currentIndex == index;
-    final color = isActive ? AppTheme.primaryColor : AppTheme.textSecondaryColor;
+/// 脉冲动画效果
+class PulseAnimationEffect extends StatefulWidget {
+  final Widget child;
+
+  const PulseAnimationEffect({Key? key, required this.child}) : super(key: key);
+
+  @override
+  State<PulseAnimationEffect> createState() => _PulseAnimationEffectState();
+}
+
+class _PulseAnimationEffectState extends State<PulseAnimationEffect> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _isDisposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
     
-    return InkWell(
-      onTap: () => onIndexChanged(index),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0), // 调整为更小的内边距
-        constraints: const BoxConstraints(minWidth: 50), // 设置最小宽度
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // 调整主轴对齐方式
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  isActive ? activeIcon : icon,
-                  color: color,
-                  size: 24,
-                ),
-                if (showBadge && badgeCount > 0)
-                  Positioned(
-                    right: -6,
-                    top: -6,
-                    child: Container(
-                      padding: EdgeInsets.all(badgeCount > 9 ? 2 : 4), // 根据数字多少调整padding
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Center(
-                        child: Text(
-                          badgeCount > 99 ? '99+' : badgeCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9, // 调小字体
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2), // 减少间距
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10, // 调小字体
-                fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
+    // 安全启动动画，延迟到下一帧
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        _controller.repeat(reverse: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _controller.stop(); // 确保先停止动画
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!mounted) return widget.child; // 安全检查，如果组件已卸载则直接返回子组件
+    
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) => Transform.scale(
+        scale: _animation.value,
+        child: widget.child,
       ),
     );
   }

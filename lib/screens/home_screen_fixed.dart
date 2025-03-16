@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
-import '../models/progress.dart';
 import '../models/word_library.dart';
 import '../utils/mock_data.dart';
 import '../widgets/avatar_widget.dart';
@@ -17,9 +16,6 @@ import 'library_selection_screen.dart';
 import 'study_statistics_screen.dart';
 import '../constants/app_constants.dart';
 import 'main_screen.dart';
-import 'wrong_answers_screen.dart';
-import 'word_challenge_screen.dart';
-import 'challenge_leaderboard_screen.dart';
 
 /// 首页/仪表盘页面
 class HomeScreen extends StatefulWidget {
@@ -37,14 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 当前选中的词库
   WordLibrary? _currentLibrary;
   
-  /// 今日进度数据
-  final Progress _todayProgress = const Progress(
-    newWordCount: 28,
-    reviewWordCount: 72,
-    targetWordCount: 150,
-    percentage: 67,
-    wrongCount: 7,
-  );
+  /// 今日进度百分比
+  final double _todayProgress = 0.75;
   
   /// 已学单词数
   final int _learnedWords = 15;
@@ -75,86 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       _currentLibrary = null;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final user = MockData.getCurrentUser();
-    final screenHeight = MediaQuery.of(context).size.height;
-    
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      body: Stack(
-        children: [
-          // 顶部渐变背景
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenHeight * 0.3, // 顶部30%区域
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFE0F2FE), // 浅蓝色开始
-                    Color(0xFFDCEFFF), 
-                    Color(0xFFECF5FF),
-                    Color(0xFFF9FAFB), // 与页面背景色融合
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          // 主内容
-          Column(
-            children: [
-              // 顶部空白区域
-              const SizedBox(height: 32),
-              
-              // 主内容区域
-              Expanded(
-                child: SafeArea(
-        child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                        // 顶部导航栏
-                        _buildTopBar(user),
-                        
-                        // 当前选中词书
-                        if (_currentLibrary != null)
-                          _buildCurrentLibrary(_currentLibrary!),
-                        
-                        // 今日进度
-                        _buildTodayProgress(),
-                        
-                        // 快速操作
-                        _buildQuickActions(),
-                        
-                        // 对战专区
-                        _buildDuelSection(),
-                        
-                        // 对战入口卡片
-                        //_buildDuelEntryCard(),  // 这个组件已被注释，保持注释状态
-                        
-                        // 我的词库
-                        _buildMyLibraries(),
-                        
-                        // 底部间距（为底部导航栏预留空间）
-                        const SizedBox(height: 80),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 
   /// 构建顶部导航栏
@@ -295,9 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
             
             // 词书信息和进度条
             Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
                     library.name,
                     style: const TextStyle(
@@ -375,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// 构建今日进度部分
+  /// 构建今日进度
   Widget _buildTodayProgress() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -544,13 +454,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: const Color(0xFFDBEAFE),
                 label: '开始学习',
                 onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LearningScreen(),
-                      ),
-                    );
-                  },
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LearningScreen(),
+                    ),
+                  );
+                },
               ),
               
               // 复习单词
@@ -560,31 +470,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: const Color(0xFFF3E8FF),
                 label: '复习单词',
                 onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReviewScreen(),
-                      ),
-                    );
-                  },
-                ),
-                
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ReviewScreen(),
+                    ),
+                  );
+                },
+              ),
+              
               // 学习统计
               _buildQuickActionItem(
                 icon: Icons.bar_chart,
                 iconColor: const Color(0xFF10B981),
                 backgroundColor: const Color(0xFFD1FAE5),
                 label: '学习统计',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
                       builder: (context) => const StudyStatisticsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                
+                    ),
+                  );
+                },
+              ),
+              
               // 错题集
               _buildQuickActionItem(
                 icon: Icons.bookmark_border,
@@ -592,12 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: const Color(0xFFFEE2E2),
                 label: '错题集',
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WrongAnswersScreen(),
-                    ),
-                  );
+                  // 导航到错题集页面
                 },
               ),
             ],
@@ -653,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '挑战专区',
+            '对战专区',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -702,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                '单词挑战',
+                                '选择词书',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -710,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const Text(
-                                '单词界的排位赛',
+                                '更换学习词库',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF6B7280),
@@ -726,9 +631,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const WordChallengeScreen(),
+                              builder: (context) => const LibrarySelectionScreen(),
                             ),
-                          );
+                          ).then((_) {
+                            setState(() {
+                              _loadLibraries();
+                            });
+                          });
                         },
                         child: Container(
                           width: double.infinity,
@@ -739,7 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           alignment: Alignment.center,
                           child: const Text(
-                            '开始挑战赛',
+                            '立即更换',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -794,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                '挑战排行榜',
+                                '对决历史',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -802,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const Text(
-                                '查看挑战战绩',
+                                '查看历史战绩',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF6B7280),
@@ -815,12 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ChallengeLeaderboardScreen(),
-                            ),
-                          );
+                          // 导航到对决历史页面
                         },
                         child: Container(
                           width: double.infinity,
@@ -831,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           alignment: Alignment.center,
                           child: const Text(
-                            '查看排行榜',
+                            '查看记录',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -993,25 +897,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color(0xFF1F2937),
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChallengeLeaderboardScreen(),
-                    ),
-                  );
+              GestureDetector(
+                onTap: () {
+                  // 查看全部词库
                 },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  '查看全部 >',
+                child: const Text(
+                  '查看全部',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4F46E5),
                   ),
                 ),
               ),
@@ -1135,6 +1030,86 @@ class _HomeScreenState extends State<HomeScreen> {
                 valueColor: AlwaysStoppedAnimation<Color>(textColor),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = MockData.getCurrentUser();
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: Stack(
+        children: [
+          // 顶部渐变背景
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: screenHeight * 0.3, // 顶部30%区域
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFE0F2FE), // 浅蓝色开始
+                    Color(0xFFDCEFFF), 
+                    Color(0xFFECF5FF),
+                    Color(0xFFF9FAFB), // 与页面背景色融合
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // 主内容
+          Column(
+            children: [
+              // 顶部空白区域
+              const SizedBox(height: 32),
+              
+              // 主内容区域
+              Expanded(
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 顶部导航栏
+                        _buildTopBar(user),
+                        
+                        // 当前选中词书
+                        if (_currentLibrary != null)
+                          _buildCurrentLibrary(_currentLibrary!),
+                        
+                        // 今日进度
+                        _buildTodayProgress(),
+                        
+                        // 快速操作
+                        _buildQuickActions(),
+                        
+                        // 对战专区
+                        _buildDuelSection(),
+                        
+                        // 对战入口卡片
+                        _buildDuelEntryCard(),
+                        
+                        // 我的词库
+                        _buildMyLibraries(),
+                        
+                        // 底部间距（为底部导航栏预留空间）
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

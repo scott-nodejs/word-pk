@@ -1,28 +1,27 @@
+/// 用户模型类
 class User {
+  /// 用户ID
   final String id;
+  
+  /// 用户名
   final String name;
-  final String? avatarUrl;
-  final String initials; // 用户名首字母，如"JD"
+  
+  /// 用户头像缩写（用于显示头像）
+  final String initials;
+  
+  /// 用户等级
   final int level;
-  final int experience;
-  final int learnedWords;
-  final int learningDays;
-  final int duelWins;
-  final List<Achievement> achievements;
-  final List<String> addedLibraryIds; // 已添加的词库ID列表
-
-  User({
+  
+  /// 用户积分
+  final int score;
+  
+  /// 构造函数
+  const User({
     required this.id,
     required this.name,
-    this.avatarUrl,
     required this.initials,
-    this.level = 1,
-    this.experience = 0,
-    this.learnedWords = 0,
-    this.learningDays = 0,
-    this.duelWins = 0,
-    this.achievements = const [],
-    this.addedLibraryIds = const [],
+    required this.level,
+    required this.score,
   });
 
   // 从JSON创建User对象
@@ -30,21 +29,9 @@ class User {
     return User(
       id: json['id'],
       name: json['name'],
-      avatarUrl: json['avatarUrl'],
       initials: json['initials'],
-      level: json['level'] ?? 1,
-      experience: json['experience'] ?? 0,
-      learnedWords: json['learnedWords'] ?? 0,
-      learningDays: json['learningDays'] ?? 0,
-      duelWins: json['duelWins'] ?? 0,
-      achievements: json['achievements'] != null
-          ? (json['achievements'] as List)
-              .map((a) => Achievement.fromJson(a))
-              .toList()
-          : [],
-      addedLibraryIds: json['addedLibraryIds'] != null
-          ? List<String>.from(json['addedLibraryIds'])
-          : [],
+      level: json['level'],
+      score: json['score'],
     );
   }
 
@@ -53,15 +40,9 @@ class User {
     return {
       'id': id,
       'name': name,
-      'avatarUrl': avatarUrl,
       'initials': initials,
       'level': level,
-      'experience': experience,
-      'learnedWords': learnedWords,
-      'learningDays': learningDays,
-      'duelWins': duelWins,
-      'achievements': achievements.map((a) => a.toJson()).toList(),
-      'addedLibraryIds': addedLibraryIds,
+      'score': score,
     };
   }
 
@@ -69,28 +50,16 @@ class User {
   User copyWith({
     String? id,
     String? name,
-    String? avatarUrl,
     String? initials,
     int? level,
-    int? experience,
-    int? learnedWords,
-    int? learningDays,
-    int? duelWins,
-    List<Achievement>? achievements,
-    List<String>? addedLibraryIds,
+    int? score,
   }) {
     return User(
       id: id ?? this.id,
       name: name ?? this.name,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
       initials: initials ?? this.initials,
       level: level ?? this.level,
-      experience: experience ?? this.experience,
-      learnedWords: learnedWords ?? this.learnedWords,
-      learningDays: learningDays ?? this.learningDays,
-      duelWins: duelWins ?? this.duelWins,
-      achievements: achievements ?? this.achievements,
-      addedLibraryIds: addedLibraryIds ?? this.addedLibraryIds,
+      score: score ?? this.score,
     );
   }
 }

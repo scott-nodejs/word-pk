@@ -44,6 +44,7 @@ class DuelResultScreen extends StatelessWidget {
       name: 'John Doe',
       initials: 'JD',
       level: 8,
+      score: 3500,
     );
     
     // 计算错题列表

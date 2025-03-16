@@ -254,19 +254,47 @@ class _DuelBattleScreenState extends State<DuelBattleScreen> with SingleTickerPr
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // 顶部状态栏
-            _buildTopBar(),
+            // 顶部渐变背景
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.of(context).size.height * 0.3,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6366F1),  // 浅蓝色起始
+                      Color(0xFF8B5CF6),  // 中间过渡色
+                      Color(0xFF9333EA),  // 紫色过渡
+                      Color(0xFFFFFFFF),  // 过渡到白色
+                    ],
+                    stops: [0.0, 0.3, 0.6, 1.0],
+                  ),
+                ),
+              ),
+            ),
             
-            // 单词卡片
-            _buildWordCard(currentQuestion),
-            
-            // 选项列表
-            _buildOptions(currentQuestion),
-            
-            // 对手状态
-            _buildOpponentStatus(),
+            // 主要内容
+            Column(
+              children: [
+                // 顶部状态栏
+                _buildTopBar(),
+                
+                // 单词卡片
+                _buildWordCard(currentQuestion),
+                
+                // 选项列表
+                _buildOptions(currentQuestion),
+                
+                // 对手状态
+                _buildOpponentStatus(),
+              ],
+            ),
           ],
         ),
       ),

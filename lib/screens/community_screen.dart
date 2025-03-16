@@ -195,6 +195,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       name: 'Sarah Kim',
       initials: 'SK',
       level: 7,
+      score: 1865,
     );
     
     return Padding(

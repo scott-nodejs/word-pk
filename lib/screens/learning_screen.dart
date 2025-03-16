@@ -4,6 +4,7 @@ import '../models/word.dart';
 import '../utils/mock_data.dart';
 import '../widgets/progress_bar.dart';
 import '../widgets/word_card.dart';
+import 'word_detail_screen.dart';
 
 /// 学习页面
 class LearningScreen extends StatefulWidget {
@@ -147,14 +148,58 @@ class _LearningScreenState extends State<LearningScreen> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: WordCard(
-                    word: currentWord,
-                    showDefinition: _showDefinition,
-                    isFavorite: _isFavorite,
-                    onFavoriteToggle: _toggleFavorite,
-                    onPronounce: _pronounceWord,
-                    onToggleDefinition: _toggleDefinition,
-                    libraryName: '大学英语四级',
+                  child: Column(
+                    children: [
+                      WordCard(
+                        word: currentWord,
+                        showDefinition: _showDefinition,
+                        isFavorite: _isFavorite,
+                        onFavoriteToggle: _toggleFavorite,
+                        onPronounce: _pronounceWord,
+                        onToggleDefinition: _toggleDefinition,
+                        libraryName: '大学英语四级',
+                      ),
+                      
+                      // 当显示释义时，添加"查看更多"按钮
+                      if (_showDefinition)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WordDetailScreen(word: currentWord),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppTheme.primaryColor,
+                              elevation: 0,
+                              side: BorderSide(color: AppTheme.primaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '查看更多详情',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
