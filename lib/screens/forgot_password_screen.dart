@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
+import '../services/word_service.dart';
 
 /// 忘记密码页面
 class ForgotPasswordScreen extends StatefulWidget {
@@ -12,6 +13,156 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   /// 当前步骤（1-3）
   int _currentStep = 1;
+  
+  /// 手机号Controller
+  final TextEditingController _phoneController = TextEditingController();
+  
+  /// 验证码Controller
+  final TextEditingController _verifyCodeController = TextEditingController();
+  
+  /// 新密码Controller
+  final TextEditingController _newPasswordController = TextEditingController();
+  
+  /// 确认密码Controller
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  
+  /// 是否显示新密码
+  bool _showNewPassword = false;
+  
+  /// 是否显示确认密码
+  bool _showConfirmPassword = false;
+  
+  /// 是否正在加载
+  bool _isLoading = false;
+  
+  /// 验证码倒计时
+  int _countDown = 0;
+  
+  /// 单词服务
+  final _wordService = WordService();
+  
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _verifyCodeController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+  
+  /// 发送验证码
+  Future<void> _sendVerifyCode() async {
+    if (_phoneController.text.isEmpty) {
+      _showMessage('请输入手机号');
+      return;
+    }
+    
+    if (_countDown > 0) {
+      return;
+    }
+    
+    setState(() {
+      _countDown = 60;
+    });
+    
+    // 启动倒计时
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          if (_countDown > 0) {
+            _countDown--;
+          }
+        });
+      }
+      return _countDown > 0;
+    });
+    
+    try {
+      final success = await _wordService.sendVerifyCode(
+        _phoneController.text,
+        type: 'reset',
+      );
+      
+      if (!success) {
+        _showMessage('验证码发送失败，请稍后重试');
+      }
+    } catch (e) {
+      _showMessage('发送验证码失败: $e');
+    }
+  }
+  
+  /// 验证验证码
+  Future<void> _verifyCode() async {
+    if (_phoneController.text.isEmpty) {
+      _showMessage('请输入手机号');
+      return;
+    }
+    
+    if (_verifyCodeController.text.isEmpty) {
+      _showMessage('请输入验证码');
+      return;
+    }
+    
+    // 这里只是简单地进入下一步，实际应用中可能需要验证验证码是否正确
+    setState(() {
+      _currentStep = 2;
+    });
+  }
+  
+  /// 重置密码
+  Future<void> _resetPassword() async {
+    if (_newPasswordController.text.isEmpty) {
+      _showMessage('请输入新密码');
+      return;
+    }
+    
+    if (_confirmPasswordController.text.isEmpty) {
+      _showMessage('请确认新密码');
+      return;
+    }
+    
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      _showMessage('两次输入的密码不一致');
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final success = await _wordService.resetPassword(
+        _phoneController.text,
+        _newPasswordController.text,
+        _verifyCodeController.text,
+      );
+      
+      if (success) {
+        setState(() {
+          _currentStep = 3;
+          _isLoading = false;
+        });
+      } else {
+        _showMessage('重置密码失败，请稍后重试');
+      }
+    } catch (e) {
+      _showMessage('重置密码失败: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  /// 显示消息
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

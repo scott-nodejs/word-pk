@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
 import '../models/word.dart';
+import '../services/word_service.dart';
 
 /// 单词详情页面
 class WordDetailScreen extends StatefulWidget {
@@ -24,19 +25,84 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
   /// 当前显示的是同义词还是反义词
   bool _showSynonyms = true;
 
+  /// API服务
+  final _wordService = WordService();
+
+  /// 加载状态
+  bool _isLoading = true;
+
+  /// 错误信息
+  String? _error;
+
+  /// 词组搭配
+  List<Map<String, String>> _phrases = [];
+
+  /// 同义词
+  List<Map<String, String>> _synonyms = [];
+
+  /// 反义词
+  List<Map<String, String>> _antonyms = [];
+
+  /// 学习进度
+  Map<String, dynamic>? _progress;
+
   @override
   void initState() {
     super.initState();
-    // 初始化收藏状态 - 移除错误的isFavorite引用
-    _isFavorite = false; // 默认为未收藏
+    _loadData();
+  }
+
+  /// 加载数据
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // 并行加载所有数据
+      final results = await Future.wait([
+        _wordService.getWordPhrases(widget.word.id),
+        _wordService.getWordSynonyms(widget.word.id),
+        _wordService.getWordAntonyms(widget.word.id),
+        _wordService.getWordProgress(widget.word.id),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _phrases = results[0] as List<Map<String, String>>;
+          _synonyms = results[1] as List<Map<String, String>>;
+          _antonyms = results[2] as List<Map<String, String>>;
+          _progress = results[3] as Map<String, dynamic>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   /// 切换收藏状态
-  void _toggleFavorite() {
-    setState(() {
-      _isFavorite = !_isFavorite;
-    });
-    // 实际应用中，这里应该更新数据库
+  Future<void> _toggleFavorite() async {
+    try {
+      await _wordService.updateFavoriteStatus(widget.word.id, !_isFavorite);
+      if (mounted) {
+        setState(() {
+          _isFavorite = !_isFavorite;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新收藏状态失败：${e.toString()}')),
+        );
+      }
+    }
   }
 
   /// 播放发音
@@ -368,25 +434,24 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
 
   /// 构建词组搭配
   Widget _buildPhrases() {
-    // 示例词组，实际应用中应该从API获取
-    final phrases = [
-      {
-        'en': 'appreciate it',
-        'zh': '感激不尽',
-      },
-      {
-        'en': 'deeply appreciate',
-        'zh': '深表感谢',
-      },
-      {
-        'en': 'greatly appreciate',
-        'zh': '非常感谢',
-      },
-      {
-        'en': 'fully appreciate',
-        'zh': '充分理解',
-      },
-    ];
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('加载失败：$_error'),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -411,7 +476,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
               mainAxisSpacing: 8,
               childAspectRatio: 2.5,
             ),
-            itemCount: phrases.length,
+            itemCount: _phrases.length,
             itemBuilder: (context, index) {
               return Container(
                 padding: const EdgeInsets.all(10.0),
@@ -424,7 +489,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      phrases[index]['en']!,
+                      _phrases[index]['en']!,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -433,7 +498,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      phrases[index]['zh']!,
+                      _phrases[index]['zh']!,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey[500],
@@ -521,20 +586,26 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
 
   /// 构建同义词/反义词
   Widget _buildSynonymsAntonyms() {
-    // 示例同义词和反义词，实际应用中应该从API获取
-    final synonyms = [
-      {'en': 'value', 'zh': '重视；珍惜'},
-      {'en': 'cherish', 'zh': '珍爱；珍惜'},
-      {'en': 'esteem', 'zh': '尊重；敬重'},
-      {'en': 'treasure', 'zh': '珍视；珍藏'},
-    ];
-    
-    final antonyms = [
-      {'en': 'undervalue', 'zh': '低估'},
-      {'en': 'depreciate', 'zh': '贬低；轻视'},
-      {'en': 'disregard', 'zh': '忽视；不尊重'},
-      {'en': 'despise', 'zh': '鄙视；轻蔑'},
-    ];
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('加载失败：$_error'),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final words = _showSynonyms ? _synonyms : _antonyms;
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -603,9 +674,8 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
               mainAxisSpacing: 8,
               childAspectRatio: 2.5,
             ),
-            itemCount: 4,
+            itemCount: words.length,
             itemBuilder: (context, index) {
-              final words = _showSynonyms ? synonyms : antonyms;
               return Container(
                 padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
@@ -714,6 +784,27 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
 
   /// 构建学习进度
   Widget _buildLearningProgress() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('加载失败：$_error'),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final progress = _progress!;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
@@ -759,20 +850,21 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '已掌握',
+                              progress['status'] ?? '未学习',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.grey[800],
                               ),
                             ),
-                            Text(
-                              '上次复习：2天前',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
+                            if (progress['lastReviewTime'] != null)
+                              Text(
+                                '上次复习：${progress['lastReviewTime']}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ],
@@ -789,7 +881,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                           ),
                         ),
                         Text(
-                          '92%',
+                          '${progress['memoryStrength']}%',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.green[600],
@@ -804,7 +896,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: 0.92,
+                    value: (progress['memoryStrength'] as num).toDouble() / 100,
                     backgroundColor: Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.green[600]!),
                     minHeight: 8,

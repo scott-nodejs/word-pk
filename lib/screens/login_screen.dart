@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import '../constants/app_theme.dart';
 import '../utils/auth_utils.dart';
+import '../services/word_service.dart';
 
 /// 登录页面
 class LoginScreen extends StatefulWidget {
@@ -14,12 +15,151 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   /// 当前选中的登录方式：true为验证码登录，false为密码登录
   bool _isVerifyCodeLogin = true;
+  
+  /// 手机号Controller
+  final TextEditingController _phoneController = TextEditingController();
+  
+  /// 密码Controller
+  final TextEditingController _passwordController = TextEditingController();
+  
+  /// 验证码Controller
+  final TextEditingController _verifyCodeController = TextEditingController();
+  
+  /// 是否正在加载
+  bool _isLoading = false;
+  
+  /// 验证码倒计时
+  int _countDown = 0;
+  
+  /// 单词服务
+  final _wordService = WordService();
+  
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _verifyCodeController.dispose();
+    super.dispose();
+  }
 
   /// 处理登录
-  void _handleLogin() {
-    // TODO: 实现实际的登录逻辑
-    AuthUtils.isLoggedIn = true;
-    Navigator.pop(context);
+  Future<void> _handleLogin() async {
+    // 防止重复点击
+    if (_isLoading) {
+      return;
+    }
+    
+    // 表单验证
+    if (_phoneController.text.isEmpty) {
+      _showMessage('请输入手机号');
+      return;
+    }
+    
+    if (_isVerifyCodeLogin) {
+      if (_verifyCodeController.text.isEmpty) {
+        _showMessage('请输入验证码');
+        return;
+      }
+    } else {
+      if (_passwordController.text.isEmpty) {
+        _showMessage('请输入密码');
+        return;
+      }
+    }
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    bool success = false;
+    
+    try {
+      if (_isVerifyCodeLogin) {
+        // 验证码登录
+        success = await _wordService.loginWithVerifyCode(
+          _phoneController.text,
+          _verifyCodeController.text,
+        );
+      } else {
+        // 密码登录
+        success = await _wordService.login(
+          _phoneController.text,
+          _passwordController.text,
+        );
+      }
+      
+      // 确保组件仍然挂载
+      if (!mounted) return;
+      
+      if (success) {
+        // 登录成功后使用Future.microtask延迟执行导航操作
+        // 这样可以确保当前事件循环完成后再执行导航
+        Future.microtask(() {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+      } else {
+        // 登录失败只显示错误消息，不跳转
+        _showMessage(_isVerifyCodeLogin ? '验证码错误或已过期' : '手机号或密码错误');
+      }
+    } catch (e) {
+      // 发生异常也只显示错误消息，不跳转
+      if (mounted) {
+        _showMessage('登录失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  /// 发送验证码
+  Future<void> _sendVerifyCode() async {
+    if (_phoneController.text.isEmpty) {
+      _showMessage('请输入手机号');
+      return;
+    }
+    
+    if (_countDown > 0) {
+      return;
+    }
+    
+    setState(() {
+      _countDown = 60;
+    });
+    
+    // 启动倒计时
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          if (_countDown > 0) {
+            _countDown--;
+          }
+        });
+      }
+      return _countDown > 0;
+    });
+    
+    try {
+      final success = await _wordService.sendVerifyCode(_phoneController.text);
+      if (!success) {
+        _showMessage('验证码发送失败，请稍后重试');
+      }
+    } catch (e) {
+      _showMessage('发送验证码失败: $e');
+    }
+  }
+  
+  /// 显示消息
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -179,6 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   child: TextField(
+                                    controller: _phoneController,
                                     keyboardType: TextInputType.phone,
                                     decoration: const InputDecoration(
                                       hintText: '请输入手机号',
@@ -247,6 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   child: TextField(
+                                    controller: _isVerifyCodeLogin ? _verifyCodeController : _passwordController,
                                     obscureText: !_isVerifyCodeLogin,
                                     keyboardType: _isVerifyCodeLogin
                                         ? TextInputType.number
@@ -276,18 +418,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   child: TextButton(
-                                    onPressed: () {
-                                      // 获取验证码
-                                    },
+                                    onPressed: _sendVerifyCode,
                                     style: TextButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
                                     ),
-                                    child: const Text(
-                                      '获取验证码',
-                                      style: TextStyle(
+                                    child: Text(
+                                      _countDown > 0 ? '$_countDown秒后重试' : '获取验证码',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
@@ -304,7 +444,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: _handleLogin,
+                              onPressed: _isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
                                 shape: RoundedRectangleBorder(
@@ -312,13 +452,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 elevation: 1,
                               ),
-                              child: const Text(
-                                '登录',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      '登录',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                             ),
                           ),
                         ],

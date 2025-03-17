@@ -138,7 +138,7 @@ class _DuelMatchingScreenState extends State<DuelMatchingScreen> {
       barrierDismissible: false,
       builder: (context) => _FaceToFaceDuelDialog(
         onCodeConfirmed: (code) {
-          // 模拟匹配过程，2秒后跳转到对战页面
+    // 模拟匹配过程，2秒后跳转到对战页面
           if (!mounted) return; // 如果组件已销毁，则不执行导航操作
           
           // 获取对话框的context，用于关闭对话框
@@ -155,23 +155,23 @@ class _DuelMatchingScreenState extends State<DuelMatchingScreen> {
               ),
             );
             
-            Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 2), () {
               if (!mounted) return; // 再次检查组件是否已销毁
               
               // 获取匹配对话框的context
               final matchingDialogContext = Navigator.of(context).context;
               if (matchingDialogContext.mounted) {
                 Navigator.pop(matchingDialogContext); // 关闭匹配对话框
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DuelBattleScreen(
-                      wordLibrary: _selectedLibrary!,
-                      wordCount: _wordCount,
-                      timeLimit: _timeLimit,
-                    ),
-                  ),
-                );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DuelBattleScreen(
+            wordLibrary: _selectedLibrary!,
+            wordCount: _wordCount,
+            timeLimit: _timeLimit,
+          ),
+        ),
+      );
               }
             });
           }

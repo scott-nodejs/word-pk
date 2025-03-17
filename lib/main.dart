@@ -15,12 +15,16 @@ import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'utils/auth_utils.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
+  // 初始化认证状态
+  await AuthUtils.init();
+  
   runApp(const MyApp());
 }
 
